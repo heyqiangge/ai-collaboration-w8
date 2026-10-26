@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="UTF-8">
+<title>待办列表 V2.0</title>
+<form id="form">
+  <input id="input" aria-label="任务内容" required>
+  <button>新增任务</button>
+</form>
+<ul id="list"></ul>
+<script>
+const list = document.querySelector('#list');
+const form = document.querySelector('#form');
+const input = document.querySelector('#input');
+let todos = [];
+let nextId = 1;
+function render() {
+  list.replaceChildren();
+  for (const todo of todos) {
+    const li = document.createElement('li');
+    li.dataset.id = todo.id;
+    const text = document.createElement('span');
+    text.textContent = todo.text;
+    text.style.textDecoration = todo.done ? 'line-through' : '';
+    li.append(text);
+    for (const [action, label] of [
+      ['edit', '编辑'], ['delete', '删除']
+    ]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.action = action;
+      const labelNode = document.createElement('span');
+      labelNode.textContent = label;
+      button.append(labelNode);
+      li.append(button);
+    }
+    list.append(li);
+  }
+}
+function deleteTodo(id) {
+  console.log('deleteTodo', id);
+  todos = todos.filter(todo => todo.id !== id);
+  render();
+}
+function toggleTodo(id) {
+  console.log('toggleTodo', id);
+  const todo = todos.find(todo => todo.id === id);
+  if (!todo) return;
+  todo.done = !todo.done;
+  render();
+}
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  todos.push({ id: String(nextId++), text, done: false });
+  input.value = '';
+  render();
+});
+list.addEventListener('click', e => {
+  if (!(e.target instanceof Element)) return;
+  const item = e.target.closest('li');
+  if (!item || !list.contains(item)) return;
+  if (item.parentElement !== list) return;
+  const id = item.dataset.id;
+  if (!id) return;
+  const delBtn = e.target.closest('[data-action="delete"]');
+  if (delBtn && item.contains(delBtn)) {
+    deleteTodo(id);
+    return;
+  }
+  // 编辑分支为 AI 参考，不作为独立完成的证明。
+  const editBtn = e.target.closest('[data-action="edit"]');
+  if (editBtn && item.contains(editBtn)) {
+    const todo = todos.find(todo => todo.id === id);
+    if (!todo) return;
+    const value = window.prompt('编辑任务', todo.text);
+    if (value === null || !value.trim()) return;
+    todo.text = value.trim();
+    render();
+    return;
+  }
+  toggleTodo(id);
+});
+</script>
+</html>
